@@ -1,0 +1,182 @@
+// src/bin/parabola.rs
+use std::fs::File;
+use std::io::{Read, Write, stdout};
+use std::time::Instant;
+use chrono::{DateTime, TimeZone, Utc};
+
+const SYMBOLS: [&str; 20] = ["☉", "☽", "☿", "♀", "♂", "♃", "♄", "♅", "♆", "⯓", "⚷", "☊", "☋", "⚴", "⊕", "⚶", "⯓", "←", "↑", "⚝"];
+const ASPECTS: [&str; 5] = ["☌", "□", "△", "☍", "✱"];
+const SIGNS: [&str; 12] = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+
+struct KernelReader {
+    timestamp: f64,
+    base_positions: [f64; 20],
+}
+
+impl KernelReader {
+    fn load(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut file = File::open(path)?;
+        
+        // Read timestamp
+        let mut jd_bytes = [0u8; 8];
+        file.read_exact(&mut jd_bytes)?;
+        let timestamp = f64::from_le_bytes(jd_bytes);
+
+        // Read base positions
+        let mut base_positions = [0.0; 20];
+        for pos in &mut base_positions {
+            let mut pos_bytes = [0u8; 8];
+            file.read_exact(&mut pos_bytes)?;
+            *pos = f64::from_le_bytes(pos_bytes);
+        }
+
+        Ok(Self {
+            timestamp,
+            base_positions,
+        })
+    }
+    
+    fn jd_to_datetime(jd: f64) -> DateTime<Utc> {
+        let unix_time = (jd - 2440587.5) * 86400.0;
+        Utc.timestamp_opt(unix_time as i64, 0).unwrap()
+    }
+
+    fn format_position(deg: f64) -> String {
+        let total_min = (deg * 60.0).round() as i32;
+        let degrees = total_min / 60;
+        let abs_degrees = degrees.rem_euclid(30);  // Position within sign
+        let minutes = total_min % 60;
+        let sign = SIGNS[(degrees / 30).rem_euclid(12) as usize];
+        format!("{}{:>2}°{:02}'", sign, abs_degrees, minutes)
+    }
+
+    fn print_ephemeris(&self) {
+        let date = Self::jd_to_datetime(self.timestamp);
+        
+        println!("\n╔══════════════════════════════════════════════════════════════════════════════╗");
+        println!("║                              PARABOLA DATABASE                                ║");
+        println!("╠══════════════════════════════════════════════════════════════════════════════╣");
+        println!("║ Date: {:<71} ║", date.format("%Y-%m-%d %H:%M UTC"));
+        println!("║ JD:   {:<71} ║", format!("{:.6}", self.timestamp));
+        println!("╠═══════╦══════════════╦═══════════════════════════════════════════════════════╣");
+        println!("║ Body  ║ Position     ║ Aspects                                               ║");
+        println!("╠═══════╬══════════════╬═══════════════════════════════════════════════════════╣");
+
+        // Personal planets
+        for i in 0..3 {
+            println!("║ {}    ║ {:>11} ║ {:<49} ║", 
+                    SYMBOLS[i], 
+                    Self::format_position(self.base_positions[i]),
+                    self.calculate_aspects(i));
+        }
+        println!("╟───────╫──────────────╫───────────────────────────────────────────────────────╢");
+        
+        // Social planets
+        for i in 3..7 {
+            println!("║ {}    ║ {:>11} ║ {:<49} ║", 
+                    SYMBOLS[i],
+                    Self::format_position(self.base_positions[i]),
+                    self.calculate_aspects(i));
+        }
+        println!("╟───────╫──────────────╫───────────────────────────────────────────────────────╢");
+        
+        // Outer planets
+        for i in 7..10 {
+            println!("║ {}    ║ {:>11} ║ {:<49} ║", 
+                    SYMBOLS[i],
+                    Self::format_position(self.base_positions[i]),
+                    self.calculate_aspects(i));
+        }
+        println!("╟───────╫──────────────╫───────────────────────────────────────────────────────╢");
+        
+        // Points
+        for i in 11..13 {
+            println!("║ {}    ║ {:>11} ║ {:<49} ║", 
+                    SYMBOLS[i],
+                    Self::format_position(self.base_positions[i]),
+                    self.calculate_aspects(i));
+        }
+        
+        println!("╚═══════╩══════════════╩═══════════════════════════════════════════════════════╝");
+    }
+
+    fn calculate_aspects(&self, body_idx: usize) -> String {
+        let mut aspects = Vec::new();
+        let pos1 = self.base_positions[body_idx];
+
+        for (i, &pos2) in self.base_positions.iter().enumerate() {
+            if i <= body_idx { continue; }
+
+            let mut diff = (pos2 - pos1).abs();
+            if diff > 180.0 { diff = 360.0 - diff; }
+
+            let aspect = match diff {
+                d if (d - 0.0).abs() < 8.0 => Some((SYMBOLS[i], ASPECTS[0])),   // Conjunction
+                d if (d - 90.0).abs() < 8.0 => Some((SYMBOLS[i], ASPECTS[1])),  // Square
+                d if (d - 120.0).abs() < 8.0 => Some((SYMBOLS[i], ASPECTS[2])), // Trine
+                d if (d - 180.0).abs() < 8.0 => Some((SYMBOLS[i], ASPECTS[3])), // Opposition
+                d if (d - 72.0).abs() < 8.0 => Some((SYMBOLS[i], ASPECTS[4])),  // Quintile
+                _ => None,
+            };
+
+            if let Some((body, asp)) = aspect {
+                aspects.push(format!("{}{}", body, asp));
+            }
+        }
+
+        aspects.join(" ")
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().collect();
+    
+    // Space for ASCII art header
+    println!("");
+    
+    if args.len() < 2 {
+        println!("PARABOLA-db commands:");
+        println!("  search <julian_date>     - Search by Julian Date");
+        println!("  time YYYY MM DD HH       - Search by calendar date and hour");
+        println!("\nExamples:");
+        println!("  parabola search 2451545.0");
+        println!("  parabola time 2024 2 4 15");
+        return Ok(());
+    }
+
+    match args[1].as_str() {
+        "search" => {
+            if let Some(jd) = args.get(2).and_then(|s| s.parse::<f64>().ok()) {
+                let kernel = KernelReader::load("zenith.kernel")?;
+                kernel.print_ephemeris();
+            } else {
+                println!("Error: Invalid Julian Date");
+            }
+        }
+        "time" => {
+            if args.len() < 6 {
+                println!("Usage: parabola time YYYY MM DD HH");
+                println!("Example: parabola time 2024 2 4 15  (for Feb 4, 2024, 15:00)");
+                return Ok(());
+            }
+
+            let year: i32 = args[2].parse()?;
+            let month: u32 = args[3].parse()?;
+            let day: u32 = args[4].parse()?;
+            let hour: u32 = args[5].parse()?;
+
+            let datetime = Utc.with_ymd_and_hms(year, month, day, hour, 0, 0)
+                .single()
+                .ok_or("Invalid date/time")?;
+            
+            let jd = datetime.timestamp() as f64 / 86400.0 + 2440587.5;
+            let kernel = KernelReader::load("zenith.kernel")?;
+            kernel.print_ephemeris();
+        }
+        _ => {
+            println!("Unknown command: {}", args[1]);
+        }
+    }
+
+    Ok(())
+}

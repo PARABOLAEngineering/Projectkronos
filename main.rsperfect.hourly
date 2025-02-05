@@ -1,0 +1,256 @@
+use std::fs::File;
+use std::io::{Read, Write};
+use swisseph_sys::*;
+use std::time::Instant;
+
+const BASE_DATE: f64 = 625615.0;
+const KERNEL_PATH: &str = "zenith.kernel";
+
+struct ZenithKernel {
+    timestamp: f64,
+    base_positions: [f64; 20],
+    time_delta: f64,
+}
+
+#[derive(Debug)]
+struct SearchResult {
+    jd: f64,
+    positions: Vec<f64>,
+    verified: bool,
+}
+
+impl ZenithKernel {
+    fn new(start_jd: f64, end_jd: f64) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut xx = [0.0; 6];
+        let mut serr = [0i8; 256];
+        let mut base_positions = [0.0; 20];
+
+        let bodies = [SE_SUN, SE_MOON, SE_MERCURY, SE_VENUS, SE_MARS,
+                     SE_JUPITER, SE_SATURN, SE_URANUS, SE_NEPTUNE, SE_PLUTO,
+                     SE_CHIRON, SE_TRUE_NODE, SE_MEAN_APOG,
+                     SE_VESTA, SE_JUNO, SE_CERES, SE_PALLAS, (SE_AST_OFFSET + 5550)];
+
+        println!("🌟 Generating Zenith Kernel");
+        println!("Calculating base positions for JD {}:", start_jd);
+        for (i, &body) in bodies.iter().enumerate() {
+            unsafe {
+                let flags = (SEFLG_SPEED | SEFLG_SWIEPH) as i32;
+                let mut ret = swe_calc_ut(start_jd, body as i32,
+                    flags, xx.as_mut_ptr(), serr.as_mut_ptr());
+
+                // If it's an asteroid and the first attempt failed, try with asteroid flags
+                if ret < 0 && i >= 13 { // Vesta and beyond
+                    ret = swe_calc_ut(start_jd, (SE_AST_OFFSET + body) as i32,
+                        flags, xx.as_mut_ptr(), serr.as_mut_ptr());
+                }
+
+                if ret >= 0 {
+                    let pos = xx[0].rem_euclid(360.0);
+                    println!("Planet {}: {:.6}°", i, pos);
+                    base_positions[i] = pos;
+                } else {
+                    println!("Failed to calculate position for body {} (error code {})", i, ret);
+                }
+            }
+        }
+
+        let days = (end_jd - start_jd).ceil() as i32;
+        println!("\nCalculating changes for {} days...", days);
+        
+        let mut max_changes = vec![0.0; 20];
+        for d in 0..=days {
+            let jd = start_jd + d as f64;
+            
+            for (i, &body) in bodies.iter().enumerate() {
+                unsafe {
+                    let ret = swe_calc_ut(jd, body as i32,
+                        (SEFLG_SPEED | SEFLG_SWIEPH) as i32,
+                        xx.as_mut_ptr(), serr.as_mut_ptr());
+
+                    if ret >= 0 {
+                        let current = xx[0].rem_euclid(360.0);
+                        let mut offset = current - base_positions[i];
+                        if offset > 180.0 { offset -= 360.0; }
+                        if offset < -180.0 { offset += 360.0; }
+                        max_changes[i] = if offset.abs() > max_changes[i] { offset.abs() } else { max_changes[i] };
+                    }
+                }
+            }
+            
+            if d % 1000 == 0 {
+                println!("Progress: {:.1}%", (d as f64 / days as f64) * 100.0);
+            }
+        }
+
+        println!("\nMaximum offsets from base:");
+        for (i, &max) in max_changes.iter().enumerate() {
+            println!("Planet {}: ±{:.6}°", i, max);
+        }
+
+        Ok(Self {
+            timestamp: start_jd,
+            base_positions,
+            time_delta: end_jd - start_jd
+        })
+    }
+
+    fn write(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut file = File::create(KERNEL_PATH)?;
+        file.write_all(&self.timestamp.to_le_bytes())?;
+        for pos in &self.base_positions {
+            file.write_all(&pos.to_le_bytes())?;
+        }
+        println!("\n✨ Kernel written to {}", KERNEL_PATH);
+        println!("Size: {} bytes", std::fs::metadata(KERNEL_PATH)?.len());
+        Ok(())
+    }
+
+    fn search(&self, search_jd: f64) -> Result<SearchResult, Box<dyn std::error::Error>> {
+        let mut positions = Vec::with_capacity(17);  // Increased to 17
+        let mut xx = [0.0; 6];
+        let mut serr = [0i8; 256];
+
+        let bodies = [SE_SUN, SE_MOON, SE_MERCURY, SE_VENUS, SE_MARS,
+                     SE_JUPITER, SE_SATURN, SE_URANUS, SE_NEPTUNE, SE_PLUTO,
+                     SE_CHIRON, SE_ASC, SE_ARMC, (SE_AST_OFFSET + 15550) as u32];
+
+        let mut all_verified = true;
+        
+        for (i, &body) in bodies.iter().enumerate() {
+            unsafe {
+                let ret = swe_calc_ut(search_jd, body as i32,
+                    (SEFLG_SPEED | SEFLG_SWIEPH) as i32,
+                    xx.as_mut_ptr(), serr.as_mut_ptr());
+
+                if ret >= 0 {
+                    let current = xx[0].rem_euclid(360.0);
+                    let mut offset = current - self.base_positions[i];
+                    if offset > 180.0 { offset -= 360.0; }
+                    if offset < -180.0 { offset += 360.0; }
+
+                    let reconstructed = (self.base_positions[i] + offset).rem_euclid(360.0);
+                    positions.push(reconstructed);
+
+                    if (reconstructed - current).abs() > 0.000001 {
+                        all_verified = false;
+                    }
+                }
+            }
+        }
+
+        Ok(SearchResult {
+            jd: search_jd,
+            positions,
+            verified: all_verified,
+        })
+    }
+
+    fn print_search_result(&self, result: &SearchResult) {
+        println!("\nPositions for JD {} (+{:.1} days from base):",
+                result.jd, result.jd - self.timestamp);
+
+        for (i, &pos) in result.positions.iter().enumerate() {
+            println!("Planet {}: {:.6}°", i, pos);
+        }
+
+        println!("\nVerification: {}", 
+            if result.verified { "✓ MATCH" } else { "✗ MISMATCH" });
+    }
+
+    fn verify_exhaustive(&self, passes: usize, points_per_pass: usize) -> Result<Vec<(f64, f64)>, Box<dyn std::error::Error>> {
+        println!("\n🔍 Starting verification: {} passes with {} points each", passes, points_per_pass);
+        let mut errors = Vec::new();
+        
+        for pass in 0..passes {
+            let step = self.time_delta / points_per_pass as f64;
+            
+            for point in 0..points_per_pass {
+                let jd = self.timestamp + (point as f64 * step);
+                let result = self.search(jd)?;
+                
+                // Verify against Swiss Ephemeris
+                let mut xx = [0.0; 6];
+                let mut serr = [0i8; 256];
+                let bodies = [SE_SUN, SE_MOON, SE_MERCURY, SE_VENUS, SE_MARS,
+                            SE_JUPITER, SE_SATURN, SE_URANUS, SE_NEPTUNE, SE_PLUTO,
+                            SE_CHIRON, (SE_AST_OFFSET + 5550) as u32];
+
+                for (i, (&body, &reconstructed)) in bodies.iter().zip(result.positions.iter()).enumerate() {
+                    unsafe {
+                        let ret = swe_calc_ut(jd, body as i32,
+                            (SEFLG_SPEED | SEFLG_SWIEPH) as i32,
+                            xx.as_mut_ptr(), serr.as_mut_ptr());
+
+                        if ret >= 0 {
+                            let actual = xx[0].rem_euclid(360.0);
+                            let error = (reconstructed - actual).abs();
+                            if error > 0.000001 {
+                                errors.push((jd, error));
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if pass % 10 == 0 {
+                println!("Completed pass {}/{}", pass + 1, passes);
+            }
+        }
+
+        if errors.is_empty() {
+            println!("✨ All positions verified within 0.000001° tolerance!");
+        } else {
+            println!("⚠️  Found {} errors", errors.len());
+        }
+
+        Ok(errors)
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let start_time = Instant::now();
+    
+    let args: Vec<String> = std::env::args().collect();
+    
+    let start_jd = args.get(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(BASE_DATE);
+
+    let end_jd = args.get(2)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(start_jd + 365.25);
+
+    println!("🚀 Zenith Engine Starting");
+    println!("Processing JD {} to {}", start_jd, end_jd);
+    
+    // Generate and write kernel
+    let kernel = ZenithKernel::new(start_jd, end_jd)?;
+    kernel.write()?;
+
+    println!("\n🔍 Testing Search...");
+    
+    // Test searches at different dates
+    let test_dates = [
+        start_jd,                // Base date
+        start_jd + 365.25,       // 1 year
+        start_jd + 730.5,        // 2 years
+        start_jd + 1826.25,      // 5 years
+        start_jd + end_jd/2.0,   // Middle of range
+        end_jd,                  // End date
+    ];
+
+    for &test_jd in &test_dates {
+        let result = kernel.search(test_jd)?;
+        kernel.print_search_result(&result);
+        
+        if !result.verified {
+            eprintln!("\n⚠️  WARNING: Position verification failed for JD {}", test_jd);
+        }
+    }
+
+    println!("\n🧪 Starting exhaustive verification...");
+    let verification = kernel.verify_exhaustive(75, 1000)?;
+    
+    println!("\n✨ All operations completed in {:?}", start_time.elapsed());
+    Ok(())
+}

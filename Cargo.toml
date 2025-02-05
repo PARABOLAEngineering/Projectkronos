@@ -1,0 +1,72 @@
+[package]
+name = "medusa"
+version = "0.1.0"
+edition = "2021"
+links = "swe"
+[dependencies]
+rayon = "1.10.0"           # Parallel processing
+parking_lot = "0.12"    # Fast synchronization primitives
+thiserror = "2.0.11"       # Error handling
+chrono = "0.4"         # Date/time handling
+swisseph_sys = {path = "./swisseph_sys"}  # Swiss Ephemeris bindings
+rand = "0.9.0"
+indicatif = "0.17.11"
+byteorder = "1.5.0"
+memmap2 = "0.9.5"
+colored = "3.0.0"
+sysinfo = "0.33.1"
+chrono-tz = "0.10.1"
+
+[dev-dependencies]
+criterion = "0.5"       # Benchmarking
+
+[[bin]]
+name = "search"
+path = "src/bin.search.rs"
+
+[[bin]]
+name = "verify"
+path = "src/bin.verify.rs"
+
+[[bin]]
+name = "refine"
+path = "src/bin.refine.rs"
+
+[[bin]]
+name = "verify_ultimate"
+path = "src/bin.verify_ultimate.rs"
+
+[[bin]]
+name = "expand"
+path = "src/bin.expand.rs"
+
+[[bin]]
+name = "search_minute"
+path = "src/bin.search_minute.rs"
+
+[[bin]]
+name = "minutemedusa"
+path = "src/bin.minutemedusa.rs"
+
+[[bin]]
+name = "verifyminute"
+path = "src/bin.verifyminute.rs"
+
+[[bin]]
+name = "parabola-db"
+path = "src/bin.parabola-db.rs"
+
+[[bin]]
+name = "medusaseconds"
+path = "src/bin.medusaseconds.rs"
+
+[[bin]]
+name = "livebenchmark"
+path = "src/bin.livebenchmark.rs"
+
+[[bin]]
+name = "medusaTZ"
+path = "src/bin.medusaTZ"
+
+[lints.rust]
+warnings = "allow"
