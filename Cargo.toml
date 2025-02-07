@@ -16,6 +16,7 @@ memmap2 = "0.9.5"
 colored = "3.0.0"
 sysinfo = "0.33.1"
 chrono-tz = "0.10.1"
+tzf-rs = "0.4.10"
 
 [dev-dependencies]
 criterion = "0.5"       # Benchmarking
