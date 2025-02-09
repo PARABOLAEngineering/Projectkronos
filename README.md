@@ -1,7 +1,7 @@
 Medusa Engine
 
 Emergency Release Notice:
-Due to increasing civil clampdowns in the United States, this project has been made open-source ahead of schedule. Documentation is minimal and will be filled out as long as possible, but here’s what you need to know:
+Due to increasing civil clampdowns in the United States, this project has been made open-source ahead of schedule. Documentation is minimal and will be completed and updated for as long as possible, but here’s what you need to know:
 Overview
 
 The Medusa Engine reads any ephemeris file, extracts planetary and angle positions, and bitpacks them into a single f64—storing 8 bytes per planet. 
