@@ -67,7 +67,11 @@ path = "src/bin.livebenchmark.rs"
 
 [[bin]]
 name = "medusaTZ"
-path = "src/bin.medusaTZ"
+path = "src/bin.medusaTZ.rs"
+
+[[bin]]
+name = "medusahumantime"
+path = "src/bin.medusahumantime.rs"
 
 [lints.rust]
 warnings = "allow"

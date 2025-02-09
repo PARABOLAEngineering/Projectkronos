@@ -51,7 +51,7 @@ main() {
 
     # Get timestamp for unique package name
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    PACKAGE_NAME="swisseph_sys_${TIMESTAMP}"
+    PACKAGE_NAME="swisseph_sys"
     echo "🌟 Setting up Swiss Ephemeris and Rust bindings as ${PACKAGE_NAME}..."
 
     # Create project structure
