@@ -28,9 +28,14 @@ Easily adaptable for sidereal calculations, making it ideal for Vedic astrology 
 
 Unlike traditional ephemerides, Zenith Kernel offers:
 ✅ Extreme Compression – 8 bytes per planet, no matter the timespan.
+
 ✅ Zero Runtime Math – Every position is precomputed to the second.
+
 ✅ L1 Cache Efficiency – Instant access to all planetary positions & speeds.
-✅ Universal Little-Endian Format – No more Swiss Ephemeris C compilation nightmares.
+
+✅ Universal Little-Endian Format
+
+
 📌 Example Implementation
 
 A working parser, bin.parabola-db, validates Medusa's accuracy.
