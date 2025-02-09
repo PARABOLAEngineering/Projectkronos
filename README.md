@@ -8,6 +8,9 @@ The Medusa Engine reads any ephemeris file, extracts planetary and angle positio
 
 **    First run:** It is highly recommended to first run the engine on the ephemerides already included with the Swiss Ephemeris, sampling at 1 position per day density.
      For reasons unknown, subsequent runs will take less than 10 milliseconds, sometimes less than a millisecond, even if storing positions at 1 second density.
+     After the first run, to store 30,000 years of data in the same size kernel, download this file into your project folder: https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de441/linux_m13000p17000.441 ,
+     rename it to de441.eph, and run bin.medusajpl. Adding additional planets should be trivial simply by adding more swisseph constants to the bodies list, and changing the array size.  
+
       
    ** Highly extensible:** Can easily be altered for sidereal calculations, making it ideal for Vedic astrology applications.
 
@@ -25,6 +28,6 @@ Example Implementation
 bin.parabola-db serves as a fully functional, user-friendly parser demonstrating the engine’s capabilities.
 Why This Matters
 
-Medusa is a fully open-source, MIT-licensed astrological engine designed to democratize access to high-precision astrology. It runs flawlessly on the most low-powered hardware, and since it returns simple binary values, integrating it into any language or GUI is trivial.
+Medusa is a fully open-source, MIT-licensed astrological engine designed to democratize access to high-precision astrology. It runs flawlessly on even the most low-powered hardware, and since it returns simple binary values, integrating it into any language or GUI is trivial.
 
 MIT License means: Go ham, brother.
