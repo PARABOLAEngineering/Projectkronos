@@ -73,5 +73,20 @@ path = "src/bin.medusaTZ.rs"
 name = "medusahumantime"
 path = "src/bin.medusahumantime.rs"
 
+[[bin]]
+name = "medusajpl_sidereal"
+path = "src/bin/medusajpl_sidereal.rs"
 [lints.rust]
 warnings = "allow"
+
+[[bin]]
+name = "paraboladb"
+path = "src/bin/paraboladb.rs"
+
+[[bin]]
+name="medusahouses"
+path="src/medusajplwithhousesandsidereal.rs"
+
+[[bin]]
+name="housestest"
+path="src/bin/housestest.rs"
