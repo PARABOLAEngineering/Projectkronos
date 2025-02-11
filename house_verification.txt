@@ -1,0 +1,120 @@
+City: Sandvika (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Kolbotn (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Rømskog (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Meieribyen (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Kirkebygda (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Elvestad (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Kirkebygda (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Kjenn (0, 45)
+Packed coordinates: 1800000
+H1 offsets from ARMC:
+  P: 92.266901°
+  K: 92.266901°
+  O: 92.266901°
+  R: 92.266901°
+  C: 92.266901°
+  E: 92.266901°
+  V: 77.266901°
+  W: 64.542928°
+
+City: Nanyuki (0.00624, 37.07398)
+Packed coordinates: 2481482956
+H1 offsets from ARMC:
+  P: 92.446932°
+  K: 92.446932°
+  O: 92.446932°
+  R: 92.446932°
+  C: 92.446932°
+  E: 92.446932°
+  V: 77.446932°
+  W: 72.468948°
+
+City: Makoua (0.00694, 15.63333)
+Packed coordinates: 2760625332
+H1 offsets from ARMC:
+  P: 92.000855°
+  K: 92.000855°
+  O: 92.000855°
+  R: 92.000855°
+  C: 92.000855°
+  E: 92.000855°
+  V: 77.000855°
+  W: 63.909598°
+
